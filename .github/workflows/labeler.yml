@@ -5,6 +5,12 @@ on:
     types: 
       - opened
       - reopened
+  workflow_call:
+    inputs:
+      build-test:
+        required: true
+        type: boolean
+        deault: false
 
 jobs:
   triage:
