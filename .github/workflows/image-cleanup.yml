@@ -11,7 +11,7 @@ jobs:
   delete-images:
     name: Delete PR-scoped test images
     runs-on: ubuntu-latest
-    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build-test')
     steps:
       - uses: r26d/ghcr-delete-image-action@v1.2.2
         with:

@@ -19,7 +19,7 @@ on:
 jobs:
   update_release_draft:
     runs-on: ubuntu-latest
-    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build-test')
     steps:
       # Drafts your next Release notes as Pull Requests are merged into "main"
       - uses: release-drafter/release-drafter@v5
