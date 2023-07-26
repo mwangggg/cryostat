@@ -7,15 +7,14 @@ on:
       - labeled
       - unlabeled
       - synchronize
-  workflow_call:
-    inputs:
-      build-test:
-        required: true
-        type: boolean
+  issue_comment:
+    types:
+      - created
 
 jobs:
   check-needs-triage-not-applied:
     runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     steps:
       - name: Fail if needs-triage label applied
         if: ${{ contains(github.event.pull_request.labels.*.name, 'needs-triage')}}

@@ -12,12 +12,9 @@ on:
       - edited
       - reopened
       - synchronize
-  workflow_call:
-    inputs:
-      build-test:
-        required: true
-        type: boolean
-
+  issue_comment:
+    types:
+      - created
   # Schedule a daily check. Used in referencing cross-repository
   # issues or pull requests
   schedule:
@@ -26,6 +23,7 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     steps:
       - uses: z0al/dependent-issues@v1
         env:

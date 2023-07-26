@@ -10,9 +10,6 @@ on:
       build-arch:
         required: true
         type: string
-      build-test:
-        required: true
-        type: boolean
       skip-itests:
         required: false
         type: boolean
@@ -25,10 +22,14 @@ on:
       GH_PKGS_READ_TOKEN:
         required: true
         description: read-only token for pulling artifacts from GitHub Packages
+  issue_comment:
+    types:
+      - created
 
 jobs:
   get-pom-properties:
     runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     steps:
     - uses: actions/checkout@v2
       with:
@@ -45,6 +46,7 @@ jobs:
 
   build-image:
     runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     needs: [get-pom-properties]
     steps:
     - name: Install qemu
@@ -89,6 +91,7 @@ jobs:
 
   integration-tests:
     runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     needs: [build-image]
     if: ${{ ! inputs.skip-itests }}
     steps:

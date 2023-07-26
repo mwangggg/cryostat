@@ -7,15 +7,14 @@ on:
       - reopened
       - edited
       - synchronize
-  workflow_call:
-    inputs:
-      build-test:
-        required: true
-        type: boolean
+  issue_comment:
+    types:
+      - created
 
 jobs:
   verify-linked-issue:
     runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]'
     name: Verify Pull Request references Issue
     steps:

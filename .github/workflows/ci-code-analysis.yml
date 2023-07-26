@@ -7,17 +7,18 @@ on:
       checkout-ref:
         required: false
         type: string
-      build-test:
-        required: true
-        type: boolean
     secrets:
       GH_PKGS_READ_TOKEN:
         required: true
         description: read-only token for pulling artifacts from GitHub Packages
+  issue_comment:
+    types:
+      - created
 
 jobs:
   spotless:
     runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     steps:
     - uses: actions/checkout@v2
       with:
@@ -28,6 +29,7 @@ jobs:
 
   spotbugs:
     runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     steps:
     - uses: actions/checkout@v2
       with:
@@ -54,6 +56,7 @@ jobs:
 
   shellcheck:
     runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     steps:
     - uses: actions/checkout@v2
       with:

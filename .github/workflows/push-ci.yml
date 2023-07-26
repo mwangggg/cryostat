@@ -10,15 +10,14 @@ on:
       - v[0-9]+
       - v[0-9]+.[0-9]+
       - cryostat-v[0-9]+.[0-9]+
-  workflow_call:
-    inputs:
-      build-test:
-        required: true
-        type: boolean
+  issue_comment:
+    types:
+      - created
 
 jobs:
   code-analysis:
     uses: ./.github/workflows/ci-code-analysis.yml
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     with:
       checkout-repo: ${{ github.event.pull_request.head.repo.full_name }}
       checkout-ref: ${{ github.event.pull_request.head.ref }}
@@ -26,12 +25,14 @@ jobs:
     if: github.repository_owner == 'cryostatio'
   build-and-test-amd64:
     uses: ./.github/workflows/ci-build-image.yml
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     secrets: inherit
     with:
       build-arch: amd64
     if: github.repository_owner == 'cryostatio'
   build-and-test-arm64:
     uses: ./.github/workflows/ci-build-image.yml
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     secrets: inherit
     with:
       build-arch: arm64
@@ -39,6 +40,7 @@ jobs:
     if: github.repository_owner == 'cryostatio'
   push-to-quay:
     runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && containd(github.event.comment.body, '/build-test')}}
     needs: [code-analysis, build-and-test-amd64, build-and-test-arm64]
     env:
       CRYOSTAT_IMG: quay.io/cryostat/cryostat
