@@ -10,7 +10,7 @@ on:
       build-test:
         required: true
         type: boolean
-        deault: false
+        default: false
     secrets:
       GH_PKGS_READ_TOKEN:
         required: true
