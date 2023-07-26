@@ -15,7 +15,6 @@ on:
       build-test:
         required: true
         type: boolean
-        default: false
 
 jobs:
   code-analysis:
