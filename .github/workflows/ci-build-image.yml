@@ -92,8 +92,7 @@ jobs:
   integration-tests:
     runs-on: ubuntu-latest
     needs: [build-image]
-    if: ${{ ! inputs.skip-itests }}
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build-test')
+    if: ${{ ! inputs.skip-itests }} && github.event.issue.pull_request && contains(github.event.comment.body, '/build-test')
     steps:
     - name: Install xpath
       run: |
