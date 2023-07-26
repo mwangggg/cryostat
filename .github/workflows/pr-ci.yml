@@ -24,6 +24,7 @@ on:
 jobs:
   code-analysis:
     uses: ./.github/workflows/ci-code-analysis.yml
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build-test')
     with:
       checkout-repo: ${{ github.event.pull_request.head.repo.full_name }}
       checkout-ref: ${{ github.event.pull_request.head.ref }}
@@ -35,6 +36,7 @@ jobs:
       matrix:
         arch: [amd64, arm64]
     uses: ./.github/workflows/ci-build-image.yml
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build-test')
     with:
       build-arch: ${{ matrix.arch }}
       checkout-repo: ${{ github.event.pull_request.head.repo.full_name }}
@@ -45,6 +47,7 @@ jobs:
 
   push-to-ghcr:
     runs-on: ubuntu-latest
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build-test')
     strategy:
       matrix:
         arch: [amd64, arm64]
