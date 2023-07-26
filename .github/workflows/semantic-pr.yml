@@ -7,15 +7,14 @@ on:
       - reopened
       - edited
       - synchronize
-  workflow_call:
-    inputs:
-      build-test:
-        required: true
-        type: boolean
+  issue_comment:
+    types:
+      - created
 
 jobs:
   main:
     runs-on: ubuntu-latest
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build-test')
     steps:
       - uses: amannn/action-semantic-pull-request@v3.4.0
         env:

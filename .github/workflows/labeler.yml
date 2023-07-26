@@ -5,11 +5,9 @@ on:
     types: 
       - opened
       - reopened
-  workflow_call:
-    inputs:
-      build-test:
-        required: true
-        type: boolean
+  issue_comment:
+    types:
+      - created
 
 jobs:
   triage:
@@ -17,6 +15,7 @@ jobs:
       contents: read
       pull-requests: write
     runs-on: ubuntu-latest
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build-test')
     steps:
     - uses: actions/labeler@v4
       with:

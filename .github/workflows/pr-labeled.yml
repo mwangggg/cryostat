@@ -7,15 +7,14 @@ on:
       - labeled
       - unlabeled
       - synchronize
-  workflow_call:
-    inputs:
-      build-test:
-        required: true
-        type: boolean
+  issue_comment:
+    types:
+      - created
 
 jobs:
   check-pr-label-and-comment:
     runs-on: ubuntu-latest
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/build-test')
     steps:
       - uses: yashhy/pr-label-check-and-comment-action@v1.0.1
         with:
