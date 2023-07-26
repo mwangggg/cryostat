@@ -22,7 +22,7 @@ on:
       build-test:
         required: true
         type: boolean
-        deault: false
+        default: false
 
 jobs:
   code-analysis:

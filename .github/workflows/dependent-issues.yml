@@ -17,7 +17,7 @@ on:
       build-test:
         required: true
         type: boolean
-        deault: false
+        default: false
 
   # Schedule a daily check. Used in referencing cross-repository
   # issues or pull requests
