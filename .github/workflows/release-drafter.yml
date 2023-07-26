@@ -12,6 +12,12 @@ on:
       - opened
       - reopened
       - synchronize
+  workflow_call:
+    inputs:
+      build-test:
+        required: true
+        type: boolean
+        deault: false
 
 jobs:
   update_release_draft:

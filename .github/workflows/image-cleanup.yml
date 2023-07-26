@@ -4,6 +4,12 @@ on:
   pull_request_target:
     types:
       - closed
+  workflow_call:
+    inputs:
+      build-test:
+        required: true
+        type: boolean
+        deault: false
 
 jobs:
   delete-images:

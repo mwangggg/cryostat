@@ -12,6 +12,12 @@ on:
       - edited
       - reopened
       - synchronize
+  workflow_call:
+    inputs:
+      build-test:
+        required: true
+        type: boolean
+        deault: false
 
   # Schedule a daily check. Used in referencing cross-repository
   # issues or pull requests

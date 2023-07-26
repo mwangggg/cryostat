@@ -7,6 +7,10 @@ on:
       checkout-ref:
         required: false
         type: string
+      build-test:
+        required: true
+        type: boolean
+        deault: false
     secrets:
       GH_PKGS_READ_TOKEN:
         required: true
