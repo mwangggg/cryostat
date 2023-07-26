@@ -13,7 +13,6 @@ on:
       build-test:
         required: true
         type: boolean
-        default: false
       skip-itests:
         required: false
         type: boolean

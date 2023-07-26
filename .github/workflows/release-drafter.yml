@@ -17,7 +17,6 @@ on:
       build-test:
         required: true
         type: boolean
-        default: false
 
 jobs:
   update_release_draft:

@@ -12,7 +12,6 @@ on:
       build-test:
         required: true
         type: boolean
-        default: false
 
 jobs:
   verify-linked-issue:
