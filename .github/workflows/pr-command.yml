@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test') }}
     uses: ./.github/workflows/ci-build-image.yml
-    with: 
+    with:
       build-arch: amd64
     secrets: inherit
   
