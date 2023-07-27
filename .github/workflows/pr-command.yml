@@ -1,0 +1,79 @@
+name: PR Command
+
+concurrency:
+  group: ci-${{ github.run_id }}
+  cancel-in-progress: true
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  create-command:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test') }}
+    steps: 
+      - name:  Command handler for building and testing
+        id: command
+        uses: xt0rted/slash-command-action@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          command: build_test
+          reaction: "true"
+          reaction-type: "+1"
+          allow-edits: "false"
+          permission-level: write
+  
+  code-analysis:
+    uses: ./.github/workflows/ci-code-analysis.yml
+    with:
+      checkout-repo: ${{ github.event.pull_request.head.repo.full_name }}
+      checkout-ref: ${{ github.event.pull_request.head.ref }}
+    secrets: inherit
+    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
+
+  build-and-test:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    uses: ./.github/workflows/ci-build-image.yml
+    with:
+      build-arch: ${{ matrix.arch }}
+      checkout-repo: ${{ github.event.pull_request.head.repo.full_name }}
+      checkout-ref: ${{ github.event.pull_request.head.ref }}
+      skip-itests: ${{ matrix.arch != 'amd64' }}
+    secrets: inherit
+    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
+
+  push-to-ghcr:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    needs: [code-analysis, build-and-test]
+    if: always() && github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
+    steps:
+    - name: Fail if needs-triage label applied
+      if: ${{ contains(github.event.pull_request.labels.*.name, 'needs-triage') }}
+      run: exit 1
+    - name: Success Comment
+      if: ${{ job.status == 'success'}}
+      uses: thollander/actions-comment-pull-request@v1
+      with:
+        message: |-
+          ${{ github.workflow   }}: succeeded 
+          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    - name: Failed Comment
+      if: ${{ ! job.status == 'success'}}
+      uses: thollander/actions-comment-pull-request@v1
+      with:
+        message: |-
+          ${{ github.workflow   }}: failed
+          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    - name: Set latest commit status as ${{ job.status }}
+      uses: myrotvorets/set-commit-status-action@master
+      if: always()
+      with:
+        sha: ${{ steps.comment-branch.outputs.head_sha }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        status: ${{ job.status }}
