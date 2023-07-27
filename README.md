@@ -378,4 +378,4 @@ For details about this API see [HTTP_API.md](./docs/HTTP_API.md),
 [GRAPHQL.md](./docs/GRAPHQL.md), and
 [DISCOVERY_PLUGINS.md](./docs/DISCOVERY_PLUGINS.md).
 
-*DELETE THIS LINE
+*DELETE THIS LINE*
