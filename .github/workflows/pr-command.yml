@@ -35,7 +35,7 @@ jobs:
     if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test') }}
     uses: ./.github/workflows/ci-build-image.yml
     with: 
-      - build-arch: amd64
+      build-arch: amd64
     secrets: inherit
   
   commit:
