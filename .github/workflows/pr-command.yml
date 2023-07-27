@@ -9,10 +9,16 @@ on:
     types: [created]
   
 jobs:
-  build-and-test:
+  command:
     runs-on: ubuntu-latest
     if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test') }}
-    steps:
+    steps: 
+      - name: Set latest commit status as pending
+        uses: myrotvorets/set-commit-status-action@master
+        with:
+          sha: ${{ steps.comment-branch.outputs.head_sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: pending
       - name:  Command handler for building and testing
         id: command
         uses: xt0rted/slash-command-action@v1
@@ -23,16 +29,39 @@ jobs:
           reaction-type: "+1"
           allow-edits: "false"
           permission-level: write
-      - name: Build preview image
-        id: build-image
-        run: echo "tag=quay.io/macao/demo:latest" >> $GITHUB_OUTPUT
-      - name: Print the preview image
-        uses: thollander/actions-comment-pull-request@v1
+      
+  build-and-test:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test') }}
+    uses: ./.github/workflows/ci-build-image.yml
+    with: 
+      - build-arch: amd64
+    secrets: inherit
+  
+  commit:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test') }}
+    steps:
+      - name: Set latest commit status as ${{ job.status }}
+        uses: myrotvorets/set-commit-status-action@master
+        if: always()
         with:
-          message: |-
-            Preview image available:
-            ```
-            ${{ steps.build-image.outputs.tag }}
-            ```
-      - name: Run tests
-        run: echo "Running tests"
+          sha: ${{ steps.comment-branch.outputs.head_sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: ${{ job.status }}
+      - name: Add comment to PR
+        uses: actions/github-script@v6
+        if: always()
+        with:
+          script: |
+            const name = '${{ github.workflow   }}';
+            const url = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+            const success = '${{ job.status }}' === 'success';
+            const body = `${name}: ${success ? 'succeeded ✅' : 'failed ❌'}\n${url}`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            })
