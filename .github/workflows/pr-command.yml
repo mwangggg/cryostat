@@ -30,7 +30,7 @@ jobs:
       checkout-repo: ${{ github.event.pull_request.head.repo.full_name }}
       checkout-ref: ${{ github.event.pull_request.head.ref }}
     secrets: inherit
-    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
+    if: github.repository_owner == 'cryostatio' && contains(github.event.pull_request.labels.*.name, 'safe-to-test') && github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
 
   build-and-test:
     strategy:
@@ -43,7 +43,7 @@ jobs:
       checkout-ref: ${{ github.event.pull_request.head.ref }}
       skip-itests: ${{ matrix.arch != 'amd64' }}
     secrets: inherit
-    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
+    if: github.repository_owner == 'cryostatio' && contains(github.event.pull_request.labels.*.name, 'safe-to-test') && github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
 
   push-to-ghcr:
     runs-on: ubuntu-latest
@@ -51,29 +51,49 @@ jobs:
       matrix:
         arch: [amd64, arm64]
     needs: [code-analysis, build-and-test]
-    if: always() && github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
+    if: always() && github.repository_owner == 'cryostatio' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
     steps:
     - name: Fail if needs-triage label applied
       if: ${{ contains(github.event.pull_request.labels.*.name, 'needs-triage') }}
       run: exit 1
-    - name: Success Comment
-      if: ${{ job.status == 'success'}}
+    - name: Fail if safe-to-test label NOT applied
+      if: ${{ !contains(github.event.pull_request.labels.*.name, 'safe-to-test') }}
+      run: exit 1
+    - uses: actions/download-artifact@v3
+      with:
+        name: cryostat-${{ matrix.arch }}
+      if: github.repository_owner == 'cryostatio'
+    - name: Load cryostat image
+      run: podman load -i cryostat-${{ matrix.arch }}.tar
+      if: github.repository_owner == 'cryostatio'
+    - name: Tag cryostat image
+      run: podman tag cryostat ghcr.io/${{ github.repository_owner }}/cryostat:pr-${{ github.event.number }}-${{ github.event.pull_request.head.sha }}-linux-${{ matrix.arch }}
+      if: github.repository_owner == 'cryostatio'
+    - name: Push PR test image to ghcr.io
+      id: push-to-ghcr
+      uses: redhat-actions/push-to-registry@v2
+      with:
+        image: cryostat
+        tags: pr-${{ github.event.number }}-${{ github.event.pull_request.head.sha }}-linux-${{ matrix.arch }}
+        registry: ghcr.io/${{ github.repository_owner }}
+        username: ${{ github.event.pull_request.user.login }}
+        password: ${{ secrets.GHCR_PR_TOKEN }}
+      if: github.repository_owner == 'cryostatio'
+    - name: Comment test image link
       uses: thollander/actions-comment-pull-request@v1
       with:
         message: |-
-          ${{ github.workflow   }}: succeeded 
-          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-    - name: Failed Comment
-      if: ${{ ! job.status == 'success'}}
-      uses: thollander/actions-comment-pull-request@v1
-      with:
-        message: |-
-          ${{ github.workflow   }}: failed
-          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-    - name: Set latest commit status as ${{ job.status }}
-      uses: myrotvorets/set-commit-status-action@master
-      if: always()
-      with:
-        sha: ${{ steps.comment-branch.outputs.head_sha }}
-        token: ${{ secrets.GITHUB_TOKEN }}
-        status: ${{ job.status }}
+          Test image available:
+          ```
+          $ CRYOSTAT_IMAGE=${{ steps.push-to-ghcr.outputs.registry-path }} sh smoketest.sh
+          ```
+      if: github.repository_owner == 'cryostatio'
+    - name: check-status
+      uses: martialonline/workflow-status@v3
+      id: workflow-status
+    - run: echo "Workflow succeeded"
+      if: steps.workflow-status.outputs.status == 'success'
+    - run: echo "Workflow failed"
+      if: steps.workflow-status.outputs.status == 'failure'
+    - run: echo "Workflow cancelled" 
+      if: steps.check.outputs.status == 'cancelled'
