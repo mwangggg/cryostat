@@ -1,4 +1,4 @@
-name: PR Command
+name: CI build and push (PR)
 
 concurrency:
   group: ci-${{ github.run_id }}
@@ -9,21 +9,6 @@ on:
     types: [created]
 
 jobs:
-  create-command:
-    runs-on: ubuntu-latest
-    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test') }}
-    steps: 
-      - name:  Command handler for building and testing
-        id: command
-        uses: xt0rted/slash-command-action@v1
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          command: build_test
-          reaction: "true"
-          reaction-type: "+1"
-          allow-edits: "false"
-          permission-level: write
-  
   code-analysis:
     uses: ./.github/workflows/ci-code-analysis.yml
     with:
@@ -31,6 +16,18 @@ jobs:
       checkout-ref: ${{ github.event.pull_request.head.ref }}
     secrets: inherit
     if: github.repository_owner == 'cryostatio' && contains(github.event.pull_request.labels.*.name, 'safe-to-test') && github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
+    steps:
+    - name: React to comment
+      uses: actions/github-script@v4
+      with:
+        script: |
+            const {owner, repo} = context.issue
+            github.reactions.createForIssueComment({
+              owner,
+              repo,
+              comment_id: context.payload.comment.id,
+              content: "+1",
+            });  
 
   build-and-test:
     strategy:
@@ -62,13 +59,10 @@ jobs:
     - uses: actions/download-artifact@v3
       with:
         name: cryostat-${{ matrix.arch }}
-      if: github.repository_owner == 'cryostatio'
     - name: Load cryostat image
       run: podman load -i cryostat-${{ matrix.arch }}.tar
-      if: github.repository_owner == 'cryostatio'
     - name: Tag cryostat image
       run: podman tag cryostat ghcr.io/${{ github.repository_owner }}/cryostat:pr-${{ github.event.number }}-${{ github.event.pull_request.head.sha }}-linux-${{ matrix.arch }}
-      if: github.repository_owner == 'cryostatio'
     - name: Push PR test image to ghcr.io
       id: push-to-ghcr
       uses: redhat-actions/push-to-registry@v2
@@ -78,9 +72,6 @@ jobs:
         registry: ghcr.io/${{ github.repository_owner }}
         username: ${{ github.event.pull_request.user.login }}
         password: ${{ secrets.GHCR_PR_TOKEN }}
-      if: github.repository_owner == 'cryostatio'
-    - name: check-status
-      uses: martialonline/workflow-status@v3
       id: workflow-status
     - name: Comment test image link
       uses: thollander/actions-comment-pull-request@v1
@@ -90,5 +81,3 @@ jobs:
           ```
           $ CRYOSTAT_IMAGE=${{ steps.push-to-ghcr.outputs.registry-path }} sh smoketest.sh
           ```
-          ${{ github.workflow   }}: ${{steps.workflow-status.outputs.status}}
-          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
