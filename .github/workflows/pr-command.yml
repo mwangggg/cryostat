@@ -79,6 +79,9 @@ jobs:
         username: ${{ github.event.pull_request.user.login }}
         password: ${{ secrets.GHCR_PR_TOKEN }}
       if: github.repository_owner == 'cryostatio'
+    - name: check-status
+      uses: martialonline/workflow-status@v3
+      id: workflow-status
     - name: Comment test image link
       uses: thollander/actions-comment-pull-request@v1
       with:
@@ -87,13 +90,5 @@ jobs:
           ```
           $ CRYOSTAT_IMAGE=${{ steps.push-to-ghcr.outputs.registry-path }} sh smoketest.sh
           ```
-      if: github.repository_owner == 'cryostatio'
-    - name: check-status
-      uses: martialonline/workflow-status@v3
-      id: workflow-status
-    - run: echo "Workflow succeeded"
-      if: steps.workflow-status.outputs.status == 'success'
-    - run: echo "Workflow failed"
-      if: steps.workflow-status.outputs.status == 'failure'
-    - run: echo "Workflow cancelled" 
-      if: steps.check.outputs.status == 'cancelled'
+          ${{ github.workflow   }}: ${{steps.workflow-status.outputs.status}}
+          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
