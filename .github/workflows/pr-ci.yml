@@ -10,7 +10,7 @@ on:
 
 jobs:
   code-analysis:
-    runs-on: ubuntu-latest:
+    runs-on: ubuntu-latest
     if: github.repository_owner == 'cryostatio' && contains(github.event.pull_request.labels.*.name, 'safe-to-test') && github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
     steps:
     - name: React to comment
@@ -80,6 +80,12 @@ jobs:
         registry: ghcr.io/${{ github.repository_owner }}
         username: ${{ github.event.pull_request.user.login }}
         password: ${{ secrets.GHCR_PR_TOKEN }}
+  
+  comment-test-image:
+    runs-on: ubuntu-latest
+    needs: [code-analysis, build-and-test]
+    if: always() && github.repository_owner == 'cryostatio' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
+    steps:
     - name: Comment test image link
       uses: thollander/actions-comment-pull-request@v1
       with:
