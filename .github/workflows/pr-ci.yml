@@ -82,17 +82,25 @@ jobs:
         registry: ghcr.io/${{ github.repository_owner }}
         username: ${{ github.event.pull_request.user.login }}
         password: ${{ secrets.GHCR_PR_TOKEN }}
-  
-  comment-test-image:
-    runs-on: ubuntu-latest
-    needs: [code-analysis, build-and-test]
-    if: always() && github.repository_owner == 'cryostatio' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/build_test')
-    steps:
+    - name: store image amd64
+      id: amd64_image
+      outputs:
+        amd64_image: ${{ steps.push-to-ghcr.outputs.registry-path }}
+      if: matrix.arch == 'amd64'
+    - name: store image arm64
+      id: arm64_image
+      outputs:
+        amd64_image: ${{ steps.push-to-ghcr.outputs.registry-path }}
+      if: matrix.arch == 'arm64'
     - name: Comment test image link
       uses: thollander/actions-comment-pull-request@v1
       with:
         message: |-
-          Test image available:
+          arm64 test image available:
           ```
-          $ CRYOSTAT_IMAGE=${{ steps.push-to-ghcr.outputs.registry-path }} sh smoketest.sh
+          $ CRYOSTAT_IMAGE=${{ steps.amd64_image.outputs.amd64_image }} sh smoketest.sh
+          ```
+          amd64 test image available:
+          ```
+          $ CRYOSTAT_IMAGE=${{ steps.arm64_image.outputs.arm64_image }} sh smoketest.sh
           ```
