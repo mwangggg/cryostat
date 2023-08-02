@@ -30,12 +30,14 @@ jobs:
         username: ${{ github.actor }}
         team: 'cryostat/reviewers'
         GITHUB_TOKEN: ${{ secrets.PAT }}
+    - name: Fail if not a Cryostat reviewer
+      if: ${{ steps.checkMember.outputs.isTeamMember == 'false' }}
+      run: exit 1
     - uses: ./.github/workflows/ci-code-analysis.yml
       with:
         checkout-repo: ${{ github.event.pull_request.head.repo.full_name }}
         checkout-ref: ${{ github.event.pull_request.head.ref }}
       secrets: inherit
-      if: ${{ steps.checkMember.outputs.isTeamMember == 'true' }}
       
   build-and-test:
     strategy:
