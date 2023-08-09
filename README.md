@@ -377,3 +377,6 @@ but is also intended as an automation or extension point for external clients.
 For details about this API see [HTTP_API.md](./docs/HTTP_API.md),
 [GRAPHQL.md](./docs/GRAPHQL.md), and
 [DISCOVERY_PLUGINS.md](./docs/DISCOVERY_PLUGINS.md).
+
+
+*delete**
